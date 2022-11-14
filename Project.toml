@@ -3,6 +3,11 @@ uuid = "1b3a6b17-8ea8-4e9c-a63f-366dc0d6bd40"
 authors = ["Lilith Hafner <Lilith.Hafner@gmail.com> and contributors"]
 version = "0.0.0"
 
+[deps]
+Gtk = "4c0ca9eb-093a-5379-98c5-f87ac0bbbf44"
+Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
+TestImages = "5e47fb64-e119-507b-a336-dd2b206d9990"
+
 [compat]
 julia = "1.6"
 
