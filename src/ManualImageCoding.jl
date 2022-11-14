@@ -15,6 +15,7 @@ export code
 const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg"]
 const FILE_NAME = "codings.csv"
 const DELIM = ", "
+const WIDTH = 1100
 is_image_path(path) = any(endswith(path, ext) for ext in IMAGE_EXTENSIONS)
 
 function search(path::AbstractString; recursive::Bool=true, filter::Function=is_image_path)
@@ -74,11 +75,10 @@ function code(path::AbstractString; title="Coding")
         for file in files # For each image file
             sleep(.001) # Hand control back to Gtk
             i === nothing || destroy(i)
-            i = Gtk.GtkImage(file)
+            i = Gtk.GtkImage(Gtk.GdkPixbuf(filename=file, width=WIDTH))
             push!(w, i)
-
+            resize!(w, 1, 1)
             show(i)
-            resize!(w, 500, 500)
             sleep(.001)
 
             take!(c) && break # If someone makes a typo, they can exit. Save on explicit enter only.
