@@ -14,7 +14,7 @@ imgpath = "../../../Desktop/img.png"
 
 using Gtk, TestImages
 
-export imshow, imshowall, page, imgpath
+export imshow, imshowall, page, imgpath, code
 
 function imshow(filename::AbstractString; title="Image")
     isfile(filename) || error("File not found: $filename")
@@ -68,6 +68,53 @@ end
         end
     end
 
+end
+
+include("Keyboard.jl")
+function code(path::AbstractString; title="Coding")
+    w = GtkWindow(title)
+    c = Channel{Bool}()
+    #k = Keyboard(w, exit_on_command_w=false, exit_on_command_q=false)
+
+    keys = UInt8[]
+
+    @guarded signal_connect(w, "key-press-event") do _, event
+        # The key is enter    && Any non-shift modifier is pressed
+        event.keyval == 65293 && #=event.state & 0x11111101 != 0 &&=# put!(c, false)
+        # The key is ascii
+        event.keyval <= 128 && push!(keys, event.keyval)
+        nothing
+    end
+
+    @guarded signal_connect(w, "delete-event") do _, event
+        put!(c, true)
+        nothing
+    end
+
+
+    open(joinpath(path, "codings.txt"), "a") do io
+        i = nothing
+        for (root, _, files) in walkdir(path)
+            for file in files
+                filename = joinpath(root, file)
+                if any(endswith(filename, ext) for ext in image_extensions)
+
+                    # For each image file
+
+                    sleep(.001) # Hand control back to Gtk
+                    i === nothing || destroy(i)
+                    i = Gtk.GtkImage(filename)
+                    push!(w, i)
+                    show(i)
+                    exit = take!(c)
+                    write(io, relpath(filename, path), ',', String(keys), '\n')
+                    if exit
+                        return
+                    end
+                end
+            end
+        end
+    end
 end
 
 end
