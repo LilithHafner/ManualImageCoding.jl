@@ -296,7 +296,7 @@ function code(w, root_path, rel_path, data)
     dirs = filter!(readdir(path)) do file
         isimage01(file) && isfile(joinpath(path, file))
     end
-    while i <= lastindex(dirs) && joinpath(rel_path, dirs[i]) ∈ keys(data)
+    while i < lastindex(dirs) && (joinpath(rel_path, dirs[i]) ∈ keys(data) || joinpath(rel_path, dirs[i+1]) ∈ keys(data)) # Strange hack
         i += 1
     end
     if i == lastindex(dirs)
