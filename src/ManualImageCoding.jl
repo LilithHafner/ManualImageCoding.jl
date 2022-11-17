@@ -301,6 +301,7 @@ function code(w, root_path, rel_path, data)
     if i == lastindex(dirs)
         i = 1
     end
+    i = max(i-10, 1)
     while true
         checkbounds(Bool, dirs, i) || (sleep(.001); destroy(vbox); signal_handler_disconnect(w, delete_event); break)
         file = dirs[i]
