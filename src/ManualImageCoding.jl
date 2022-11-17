@@ -81,13 +81,14 @@ function read_marked_tree(path, tree)
         paren_match = match(r"\([^()]*\)$", line)
         off = paren_match === nothing ? lastindex(line)+1 : paren_match.offset
         line = strip(line[begin:off-1])
+        p = joinpath(path, line)
         if arrow_match !== nothing && out === nothing
             out = line
-            ispath(line*" (skip)") && mv(line*" (skip)", line)
-        elseif paren_match !== nothing && occursin(r"skip"i, paren_match.match) && ispath(line)
-            mv(line, line*" (skip)")
-        elseif (paren_match === nothing || !occursin(r"skip"i, paren_match.match)) && ispath(line*" (skip)")
-            mv(line*" (skip)", line)
+            ispath(p*" (skip)") && mv(p*" (skip)", p)
+        elseif paren_match !== nothing && occursin(r"skip"i, paren_match.match) && ispath(p)
+            mv(p, p*" (skip)")
+        elseif (paren_match === nothing || !occursin(r"skip"i, paren_match.match)) && ispath(p*" (skip)")
+            mv(p*" (skip)", p)
         end
     end
     out
