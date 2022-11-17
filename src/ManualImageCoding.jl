@@ -211,9 +211,9 @@ function code(w, root_path, rel_path, data)
     notes = GtkEntry(text="Notes", margin=8)
     push!(hbox2, notes)
 
-    coder = GtkEntry(text="Coder", margin=8)
+    coder = GtkEntry(text="Lilith", margin=8)
     push!(hbox2, coder)
-    camera_station = GtkEntry(text="Camera station", margin=8)
+    camera_station = GtkEntry(text=string(split(basename(rel_path), '_', limit=2)[2]), margin=8)
     push!(hbox2, camera_station)
 
     prev_button = GtkButton(label="⟨", margin=8)
@@ -319,7 +319,7 @@ function code(w, root_path, rel_path, data)
             camera_station.text[String] = previous_coding.camera_station
         end
 
-        progress_display.label[String] = "Goo"
+        progress_display.label[String] = "$i/$(length(dirs))"
 
         rp = joinpath(rel_path, file)
         t = mtime(joinpath(root_path, p))
