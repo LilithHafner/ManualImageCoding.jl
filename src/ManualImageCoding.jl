@@ -215,7 +215,8 @@ function code(w, root_path, rel_path, data)
     notes = GtkEntry(text="Notes", margin=8)
     push!(hbox2, notes)
 
-    coder = GtkEntry(text="Lilith", margin=8)
+    lo = try parse(Int, string(split(splitpath(rel_path)[1], '_')[1])) <= 100 catch; true end
+    coder = GtkEntry(text=lo ? "Lilith" : "Ella", margin=8)
     push!(hbox2, coder)
     camera_station = GtkEntry(text=string(split(splitpath(rel_path)[1], '_', limit=2)[2]), margin=8)
     push!(hbox2, camera_station)
