@@ -257,11 +257,13 @@ function code(w, root_path, rel_path, data)
     end
     @guarded function next(args...)
         i += 1
+        grab_focus(species)
         put!(c, true)
         nothing
     end
     @guarded function prev(args...)
         i -= 1
+        grab_focus(species)
         put!(c, true)
         nothing
     end
