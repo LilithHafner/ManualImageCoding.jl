@@ -302,9 +302,6 @@ function code(w, root_path, rel_path, data)
     while i < lastindex(dirs) && (joinpath(rel_path, dirs[i]) ∈ keys(data) || joinpath(rel_path, dirs[i+1]) ∈ keys(data)) # Strange hack
         i += 1
     end
-    if i == lastindex(dirs)
-        i = 1
-    end
     i = max(i-5, 1)
     while true
         checkbounds(Bool, dirs, i) || (sleep(.001); destroy(vbox); signal_handler_disconnect(w, delete_event); break)
