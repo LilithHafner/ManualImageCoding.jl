@@ -159,7 +159,7 @@ function load(path)
     out = Dict{String, NamedTuple{headers(), NTuple{length(headers()), String}}}()
     if isfile(p)
         for row in CSV.File(p)
-            out[row.path] = (;(k=>v === missing ? "" : string(v) for (k,v) in pairs(row))...)
+            out[row.path] = (;(k=>v === missing ? "" : string(v) for (_,(k,v)) in zip(headers(), pairs(row)))...)
         end
     else
         open(p, "w") do io
