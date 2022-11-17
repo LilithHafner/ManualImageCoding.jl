@@ -354,8 +354,18 @@ function code(w, root_path, rel_path, data)
     exit
 end
 
+function backup(root_path)
+    b = joinpath(root_path, "backups")
+    isdir(b) || mkdir(b)
+    d = joinpath(root_path, "data.csv")
+    isfile(d) && cp(d, joinpath(b, "data_backup_$(round(Int, time())).csv"))
+    nothing
+end
+
 function main(root_path = ".")
     println("Started")
+    backup(root_path)
+    println("Backup created")
     data = load(root_path)# possible bottleneck, but probably fine.
     println("Data loaded")
     w = GtkWindow("GUI")
