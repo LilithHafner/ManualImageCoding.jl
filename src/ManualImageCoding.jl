@@ -16,7 +16,7 @@ const isimage01 = endswith(r".(JPG|PNG|GIF|WEBP|TIFF|PSD|RAW|BMP|HEIF|INDD|JPEG)
 
 function print_tree(io::IO, path, info=nothing)
     for (root, dirs, files) in Iterators.Drop(walkdir(path), 1)
-        println(io, joinpath(splitpath(root)[2:end]), info===nothing ? "" : info(root, dirs, files))
+        println(io, relpath(root, path), info===nothing ? "" : info(root, dirs, files))
     end
 end
 
@@ -28,8 +28,8 @@ function israndomized(str)
 end
 
 function randomize_name(str)
-    x = rand(0:999999)
-    y = hash(x) % 100
+    x = rpad(rand(0:999999), 6, '0')
+    y = rpad(hash(x) % 100, 2, '0')
     "$x$(y)_$str"
 end
 
@@ -38,6 +38,14 @@ function randomize_dirs(path)
         israndomized(name) && continue
         p = joinpath(path, name)
         isdir(p) && mv(p, joinpath(path, randomize_name(name)))
+    end
+end
+
+function simple_randomize_dirs(path)
+    dirs = readdir(path)
+    prefs = lpad.(randperm(length(dirs)), 3, '0')
+    for (pref, name) in zip(prefs, readdir(path))
+        mv(joinpath(path, name), joinpath(path, pref*"_"*name))
     end
 end
 
@@ -311,6 +319,8 @@ function code(w, root_path, rel_path, data)
             camera_station.text[String] = previous_coding.camera_station
         end
 
+        progress_display.label[String] = "Goo"
+
         rp = joinpath(rel_path, file)
         t = mtime(joinpath(root_path, p))
         time_string = string(unix2datetime(t) + Hour(6))
@@ -358,6 +368,14 @@ function main(root_path = ".")
         destroy(w)
     end
     println("Finished")
+end
+
+function count_images(path)
+    out = 0
+    for (_, _, f) in walkdir(path)
+        out += count(isimage01, f)
+    end
+    out
 end
 
 end
