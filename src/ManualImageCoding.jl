@@ -362,9 +362,25 @@ function backup(root_path)
     nothing
 end
 
+function bootstrap(root_path)
+    p = joinpath(root_path, "coding")
+    src = raw"""SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+julia -e 'import Pkg; try Pkg.add(url="https://github.com/LilithHafner/ManualImageCoding.jl") catch; println("WARNING: No internet") end; using ManualImageCoding; main(ARGS[1])' $SCRIPT_DIR
+"""
+    if isfile(p)
+        if String(read(p)) != src
+            open(p, "w") do io
+                write(io, src)
+            end
+            println("Bootstrapped!")
+        end
+    end
+end
+
 function main(root_path = ".")
     println("Started")
     backup(root_path)
+    bootstrap(root_path)
     println("Backup created")
     data = load(root_path)# possible bottleneck, but probably fine.
     println("Data loaded")
