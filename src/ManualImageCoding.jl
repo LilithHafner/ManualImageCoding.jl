@@ -348,7 +348,7 @@ function code(w, root_path, rel_path, data)
             time_unix = string(t),
             coding_time_unix = string(time()),
             camera_station_number=string(split(splitpath(rel_path)[1], '_')[1]),
-            notes=notes.text[String])
+            notes=replace(notes.text[String], ","=>"<comma>"))
     end
 
     exit
