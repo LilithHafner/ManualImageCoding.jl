@@ -12,34 +12,8 @@ using Gtk, Random, DataFrames, CSV, Dates
 
 export main
 
-# function index(path)
-#     df = DataFrame(root=String[], path=String[], mtime=Float64[], is_dir=BitVector())
-#     function insert(root, leaf, dir)
-#         p = joinpath(root, leaf)
-#         mtime = stat(p).mtime # most of the runtime
-#         push!(df, (relpath(root, path), relpath(p, path), mtime, dir))
-#     end
-#     for (root, dirs, files) in walkdir(path)
-#         insert.((root,), dirs, true)
-#         insert.((root,), files, false) # most of the runtime
-#     end
-#     df
-# end
-
 const isimage01 = endswith(r".(JPG|PNG|GIF|WEBP|TIFF|PSD|RAW|BMP|HEIF|INDD|JPEG)"i)
 
-# function label_images!(df::DataFrame)
-#     df.is_image = .!df.is_dir .& isimage01.(df.path)
-#     df
-# end
-
-# print_tree(path) = print_tree(stdout, path)
-# function print_tree(io::IO, path, info=nothing) # indentation based
-#     base = length(splitpath(path))
-#     for (root, dirs, files) in walkdir(path)
-#         println(io, "  "^(length(splitpath(root))-base), basename(root), info===nothing ? "" : info(root, dirs, files))
-#     end
-# end
 function print_tree(io::IO, path, info=nothing)
     for (root, dirs, files) in Iterators.Drop(walkdir(path), 1)
         println(io, joinpath(splitpath(root)[2:end]), info===nothing ? "" : info(root, dirs, files))
@@ -365,21 +339,6 @@ function code(w, root_path, rel_path, data)
             notes=notes.text[String])
     end
 
-    #=destroy(path_display)
-    destroy(time_display)
-    destroy(species)
-    destroy(count)
-    destroy(notes)
-    destroy(coder)
-    destroy(camera_station)
-    destroy(prev_button)
-    destroy(next_button)
-
-    destroy(image)
-    destroy(hbox)
-    destroy(hbox2)
-    destroy(vbox)=#
-
     exit
 end
 
@@ -400,116 +359,5 @@ function main(root_path = ".")
     end
     println("Finished")
 end
-
-_code(;path, kw...) = _code(path; kw...)
-function _code(path::AbstractString; title="Coding", coding_file_name="codings.csv", delim=", ", width=1100, verbose=true, shuffle=true)
-
-    # search for images
-    files = String[]
-    for (root, _, fs) in walkdir(path), file in fs
-        filename = joinpath(root, file)
-        ufn = uppercase(filename[max(begin, end-4):end])
-        any(endswith(ufn, ext) for ext in EXTENSIONS) && push!(files, filename)
-    end
-
-    total = length(files)
-    total == 0 && (println("WARNING: No images found in $path"); return)
-
-    # get uncoded images
-
-    for f in files
-        occursin(delim, joinpath(path, f)) && println("WARNING: Delimiter \"$delim\" found in file \"$f\". Consider renaming the file.")
-    end
-    filename = joinpath(path, coding_file_name)
-    if isfile(filename)
-        coded = open(filename, "r") do f
-            Set(first(split(line, delim)) for line in readlines(f))
-        end
-        filter!(x -> !(relpath(x, path) in coded), files)
-    end
-    shuffle && shuffle!(files)
-    verbose && println("$(total-length(files))/$total ($(round(Int, 100*(total-length(files))/total))%) images coded. $(length(files)) left.")
-
-    # present the images to the user for coding
-
-    w = GtkWindow(title)
-    c = Channel{Bool}()
-
-    keys = UInt8[]
-
-    @guarded signal_connect(w, "key-press-event") do _, event
-        # The key is enter    && Any non-capslock modifier is pressed
-        event.keyval == 65293 && #=event.state & 0x11111101 != 0 &&=# put!(c, false)
-        # The key is escape
-        event.keyval == 65307 && (Gtk.destroy(w); put!(c, true))
-        # The key is ascii
-        event.keyval <= 128 && push!(keys, event.keyval)
-        nothing
-    end
-
-    @guarded signal_connect(w, "delete-event") do _, event
-        put!(c, true)
-        nothing
-    end
-
-    open(joinpath(path, coding_file_name), "a") do io
-        i = nothing
-        for file in files # For each image file
-            sleep(.001) # Hand control back to Gtk
-            i === nothing || destroy(i)
-            i = Gtk.GtkImage(Gtk.GdkPixbuf(;filename=file, width))
-            push!(w, i)
-            resize!(w, 1, 1)
-            show(i)
-            sleep(.001)
-
-            take!(c) && break # If someone makes a typo, they can exit. Save on explicit enter only.
-
-            str = relpath(file, path) * delim * String(keys) * '\n'
-            write(io, str)
-            flush(io)
-            verbose && print(str)
-
-        end
-    end
-end
-
-# function julia_main()::Cint
-#     s = ArgParseSettings()
-#     @add_arg_table! s begin
-#         "--path"
-#             help = "the path to the directory containing the images to code"
-#             arg_type = String
-#             default = @__DIR__
-#         "--coding_file_name"
-#             help = "the file name to use when loading and saving the codings"
-#             arg_type = String
-#             default = "codings.csv"
-#         "--delim"
-#             help = "the delimiter to use when loading and saving the codings"
-#             arg_type = String
-#             default = ", "
-#         "--width"
-#             help = "the width of the images to display"
-#             arg_type = Int
-#             default = 1100
-#         "--verbose"
-#             help = "whether to print output to the command-line"
-#             arg_type = Bool
-#             default = true
-#         "--shuffle"
-#             help = "whether to shuffle the images before coding"
-#             arg_type = Bool
-#             default = true
-#     end
-#     parsed_args = parse_args(s, as_symbols=true)
-#     code(;parsed_args...)
-
-#     return 0 # if things finished successfully
-# end
-
-# if abspath(PROGRAM_FILE) == @__FILE__
-#     julia_main()
-# end
 
 end
