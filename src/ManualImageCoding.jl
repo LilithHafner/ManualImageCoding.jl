@@ -213,7 +213,7 @@ function code(w, root_path, rel_path, data)
 
     coder = GtkEntry(text="Lilith", margin=8)
     push!(hbox2, coder)
-    camera_station = GtkEntry(text=string(split(basename(rel_path), '_', limit=2)[2]), margin=8)
+    camera_station = GtkEntry(text=string(split(splitdir(rel_path)[1], '_', limit=2)[2]), margin=8)
     push!(hbox2, camera_station)
 
     prev_button = GtkButton(label="⟨", margin=8)
@@ -345,7 +345,7 @@ function code(w, root_path, rel_path, data)
             coding_time = string(now()),
             time_unix = string(t),
             coding_time_unix = string(time()),
-            camera_station_number=string(split(basename(rel_path), '_')[1]),
+            camera_station_number=string(split(splitdir(rel_path)[1], '_')[1]),
             notes=notes.text[String])
     end
 
