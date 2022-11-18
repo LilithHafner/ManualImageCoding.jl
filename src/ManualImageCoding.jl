@@ -246,7 +246,7 @@ function code(w, root_path, rel_path, data)
     show(vbox)
 
 
-    c = Channel{Bool}()
+    c = Channel{Int}()
     i::Int = 1
     exit::Bool = false
 
@@ -257,15 +257,13 @@ function code(w, root_path, rel_path, data)
         image.pixbuf[typeof(pixbuf)] = pixbuf
     end
     @guarded function next(args...)
-        i += 1
         grab_focus(species)
-        put!(c, true)
+        put!(c, 1)
         nothing
     end
     @guarded function prev(args...)
-        i -= 1
         grab_focus(species)
-        put!(c, true)
+        put!(c, -1)
         nothing
     end
 
@@ -273,7 +271,7 @@ function code(w, root_path, rel_path, data)
     signal_connect(prev, prev_button, "clicked")
     delete_event = signal_connect(w, "delete-event") do _, event
         exit = true
-        put!(c, false)
+        put!(c, 0)
         nothing
     end
     for e in [species, count, notes, coder, camera_station]#Iterators.flatten((hbox2, (w,))) # enter / shift+ender
@@ -306,7 +304,7 @@ function code(w, root_path, rel_path, data)
     perm = sortperm(times)
     dirs, times = dirs[perm], times[perm]
 
-    while i < lastindex(dirs) && (joinpath(rel_path, dirs[i]) ∈ keys(data) || joinpath(rel_path, dirs[i+1]) ∈ keys(data)) # Strange hack
+    while i <= lastindex(dirs) && joinpath(rel_path, dirs[i]) ∈ keys(data)
         i += 1
     end
     i = max(i-5, 1)
@@ -339,9 +337,9 @@ function code(w, root_path, rel_path, data)
 
         show_image(joinpath(root_path, p))
 
-        ok = take!(c)
+        status = take!(c)
         sleep(.001)
-        ok || break
+        status == 0 && break
 
         record(root_path, data;
             path=p,
@@ -356,6 +354,8 @@ function code(w, root_path, rel_path, data)
             coding_time_unix = string(time()),
             camera_station_number=string(split(splitpath(rel_path)[1], '_')[1]),
             notes=replace(notes.text[String], ","=>"<comma>"))
+
+        i += status
     end
 
     exit
