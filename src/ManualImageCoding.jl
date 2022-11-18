@@ -302,6 +302,10 @@ function code(w, root_path, rel_path, data)
     dirs = filter!(readdir(path)) do file
         isimage01(file) && isfile(joinpath(path, file))
     end
+    times = [mtime(joinpath(path, file)) for file in dirs]
+    perm = sortperm(times)
+    dirs, times = dirs[perm], times[perm]
+
     while i < lastindex(dirs) && (joinpath(rel_path, dirs[i]) ∈ keys(data) || joinpath(rel_path, dirs[i+1]) ∈ keys(data)) # Strange hack
         i += 1
     end
@@ -327,7 +331,7 @@ function code(w, root_path, rel_path, data)
         progress_display.label[String] = "$i/$(length(dirs))"
 
         rp = joinpath(rel_path, file)
-        t = mtime(joinpath(root_path, p))
+        t = times[i]
         time_string = string(unix2datetime(t) + Hour(6))
 
         path_display.label[String] = rp
