@@ -245,6 +245,9 @@ function code(w, root_path, rel_path, data)
     show(hbox2)
     show(vbox)
 
+    stp = GtkStyleProvider(GtkCssProvider(data="#red {background:red;} #blue {background:blue;}"))
+    push!(GAccessor.style_context(next_button), stp, 600) # 600?
+    push!(GAccessor.style_context(prev_button), stp, 600) # 600?
 
     c = Channel{Int}()
     i::Int = 1
@@ -334,6 +337,9 @@ function code(w, root_path, rel_path, data)
 
         path_display.label[String] = rp
         time_display.label[String] = time_string # 6 hours for time zone
+
+        set_gtk_property!(next_button, :name, i+1 > lastindex(times) ? "red" : times[i+1] > times[i] + 60*60 ? "blue" : "")
+        set_gtk_property!(prev_button, :name, i-1 < firstindex(times) ? "red" : times[i-1] < times[i] - 60*60 ? "blue" : "")
 
         show_image(joinpath(root_path, p))
 
