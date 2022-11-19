@@ -10,6 +10,7 @@ Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Gtk = "4c0ca9eb-093a-5379-98c5-f87ac0bbbf44"
 Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 TestImages = "5e47fb64-e119-507b-a336-dd2b206d9990"
 
 [compat]

@@ -8,7 +8,7 @@ module ManualImageCoding
 # Multiple entries per image
 # Automatic column names
 
-using Gtk, Random, DataFrames, CSV, Dates
+using Gtk, Random, DataFrames, CSV, Dates, StatsBase
 
 export main
 
@@ -154,8 +154,7 @@ function prompt_for_file(w, path, coded)
 end
 
 headers() = :path, :camera_station, :time, :species, :count, :coder, :image_name, :coding_time, :time_unix, :coding_time_unix, :camera_station_number, :notes
-function load(path)
-    p = joinpath(path, "data.csv")
+function load(path, p = joinpath(path, "data.csv"))
     out = Dict{String, NamedTuple{headers(), NTuple{length(headers()), String}}}()
     if isfile(p)
         for row in CSV.File(p)
@@ -417,6 +416,105 @@ function count_images(path)
         out += count(isimage01, f)
     end
     out
+end
+
+function load_unique_df(path, files=filter(endswith(".csv"), readdir(path, join=true)))
+    dict = load(nothing, files[1])
+    for p in files[2:end]
+        merge!(dict, load(nothing, p))
+    end
+    df = DataFrame(values(dict))
+    df.camera_station_number = parse.(Int, df.camera_station_number)
+    df.time = parse.(DateTime, df.time)
+    sort!(df, :camera_station_number)
+    sort!(df, :time)
+    df
+end
+
+abbreviations = Dict([(uppercase(k) => v) for (k,v) in [
+    "" => "",
+    "B" => "Bird",
+    "BD" => "Muntjac",
+    "Bear" => "Bear",
+    "Bug" => "Bug",
+    "Cattle" => "Cattle",
+    "Civet" => "Civet",
+    "Civit" => "Civet",
+    "CloudedL" => "Clouded Leopard",
+    "Com L" => "Common Leopard",
+    "ComL" => "Common Leopard",
+    "Common L" => "Common Leopard",
+    "Dog" => "Domestic Dog",
+    "E" => "Elephant",
+    "F" => "Forester",
+    "Fox" => "Fox",
+    "GC" => "Golden Cat",
+    "H" => "Human",
+    "HM" => "Himalayan Martin",
+    "Horse" => "Horse",
+    "M" => "Monkey",
+    "MD" => "Musk Deer",
+    "MG" => "Mongoose",
+    "Nothing" => "",
+    "Pig" => "Pig",
+    "Red Panda" => "Red Panda",
+    "SD" => "Sambar Deer",
+    "SM" => "Small Mammal",
+    "Tiger" => "Tiger",
+    "Unknown" => "",
+    "WC" => "Wild Cow",
+    "WD" => "Wild Dog",
+    "WP" => "Wild Pig",
+    "Y" => "Yak",
+    "Yak" => "Yak",
+    "MC" => "Marbled Cat",
+    "Porcupine" => "Porcupine",
+    "Bird" => "Bird",
+    "Squirrel" => "Squirrel",
+    "Butterfly" => "Butterfly",
+    "P" => "Pig",
+    "Porc" => "Porcupine",
+    "sm'" => "Small Mammal",
+    "sic" => "Small Indian Civet",
+    "Small Indian Civet" => "Small Indian Civet",
+    "Cow" => "Cattle",
+    "c" => "Cattle",
+    "Capped Langur" => "Capped Langur",
+    "Owl" => "Owl"]])
+labels = sort(collect(values(abbreviations)))
+
+function unabbreviate!(df, abbreviations=abbreviations)
+    df.species = [abbreviations[uppercase(x)] for x in df.species]
+    df
+end
+
+function segment_events!(df)
+    df.event = Vector{Int}(undef, nrow(df))
+    event = df.event[1] = 1
+    for i in 2:nrow(df)
+        if df.camera_station[i] != df.camera_station[i-1] || df.time[i] > df.time[i-1] + Hour(1)
+            event += 1
+        end
+        df.event[i] = event
+    end
+    df
+end
+
+function combine_events!(df)
+    df.count_int = [c == "" ? 0 : parse(Int, c) for c in df.count]
+    gdf = groupby(df, :event)
+    transform!(gdf, :, [:species, :count_int] => countmap => :species_in_event)
+    for d in df.species_in_event
+        if ("" => 0) ∈ d
+            pop!(d, "")
+        end
+    end
+    df
+end
+
+function create_binary_ml_labels!(df, labels=labels)
+    df.binary_ml_labels = [in(keys(sin)).(labels) for sin in df.species_in_event]
+    df
 end
 
 end
