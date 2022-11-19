@@ -377,8 +377,8 @@ end
 
 function bootstrap(root_path)
     p = joinpath(root_path, "coding")
-    src = raw"""SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-julia -e 'import Pkg; try Pkg.add(url="https://github.com/LilithHafner/ManualImageCoding.jl") catch; println("WARNING: No internet") end; using ManualImageCoding; main(ARGS[1])' $SCRIPT_DIR
+    src = raw"""cd "${0%/*}"
+julia -e 'import Pkg; try Pkg.add(url="https://github.com/LilithHafner/ManualImageCoding.jl") catch; println("WARNING: No internet") end; using ManualImageCoding; main()'
 """
     if isfile(p)
         if String(read(p)) != src
