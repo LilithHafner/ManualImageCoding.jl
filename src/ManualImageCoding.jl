@@ -424,7 +424,7 @@ function load_unique_df(path, files=filter(endswith(".csv"), readdir(path, join=
         merge!(dict, load(nothing, p))
     end
     df = DataFrame(values(dict))
-    df.camera_station_number = parse.(Int, df.camera_station_number)
+    df.camera_station_number = Int.(parse.(Float64, df.camera_station_number))
     df.time = parse.(DateTime, df.time)
     sort!(df, :camera_station_number)
     sort!(df, :time)
@@ -433,7 +433,8 @@ end
 
 abbreviations = Dict([(uppercase(k) => v) for (k,v) in [
     "" => "",
-    "B" => "Bird",
+    #"B" => "Bird", # Lilith only
+    "bi" => "Bird",
     "BD" => "Muntjac",
     "Bear" => "Bear",
     "Bug" => "Bug",
@@ -462,7 +463,7 @@ abbreviations = Dict([(uppercase(k) => v) for (k,v) in [
     "SM" => "Small Mammal",
     "Tiger" => "Tiger",
     "Unknown" => "",
-    "WC" => "Wild Cow",
+    "WC" => "Gaur",
     "WD" => "Wild Dog",
     "WP" => "Wild Pig",
     "Y" => "Yak",
@@ -480,12 +481,121 @@ abbreviations = Dict([(uppercase(k) => v) for (k,v) in [
     "Cow" => "Cattle",
     "c" => "Cattle",
     "Capped Langur" => "Capped Langur",
-    "Owl" => "Owl"]])
+    "Owl" => "Owl",
+    "ca" => "Cattle",
+    "hu" => "Human",
+    "hf" => "Forester",
+    "fh" => "Forester",
+    "D" => "Domestic Dog",
+    "ho" => "Horse",
+    "ele" => "Elephant",
+    "mk" => "Monkey",
+    "ga" => "Gaur",
+    "ci" => "Civet",
+    "Go" => "Goral",
+    "S" => "Serow",
+    "gol" => "Golden Langur",
+    "cl" => "Capped Langur",
+    "gel" => "Grey Langur",
+    "B" => "Bear", # Ella only
+    "cll" => "Clouded Leopard",
+    "cil" => "Clouded Leopard",
+    "lc" => "Leopard Cat",
+    "col" => "Common Leopard",
+    "T" => "Tiger",
+    "MJ" => "Muntjac",
+    "Monkey" => "Monkey",
+    "RP" => "Red Panda",
+    "BE" => "Bear",
+    "WDO" => "Wild Dog",
+    "'" => "",
+    "Wild Dog" => "Wild Dog",
+    "NU" => "Human",
+    "Small Mammal" => "Small Mammal",
+    "Yaks" => "Yak",
+    "Mammal" => "Unknown Mammal",
+    "Elephant" => "Elephant",
+    "Langur" => "Unknown Langur",
+    "Minkey" => "Monkey",
+    "Wild Pig" => "Wild Pig",
+    "Wild P" => "Wild Pig",
+    "CSA" => "Cow",
+    "SOL" => "Unknown Cat",
+    "EL" => "Elephant",
+    "Goat" => "Goat",
+    "FM" => "Forester",
+    "Panther" => "Black Panther",
+    "Guar" => "Gaur",
+    "Golden Cat" => "Golden Cat",
+    "Covet" => "Civet",
+    "Mankey" => "Monkey",
+    "Wild Do" => "Wild Dog",
+    "Himalayan Marten" => "Himalayan Martin",
+    "Cattla" => "Cattle",
+    "Human" => "Human",
+    "??" => "Unknown",
+    "L" => "Unknown Cat",
+    "Ca+" => "Cow",
+    "Himalayan Yellow Necked Marten" => "Himalayan Yellow Necked Marten",
+    "Cattal" => "Cattle",
+    "Callte" => "Cattle",
+    "Catlle" => "Cattle",
+    "Xa" => "Cattle",
+    "X" => "Unknown",
+    "Cs" => "Cattle",
+    "Elehant" => "Elephant",
+    "DS" => "Dog",
+    "Cibet" => "Civet",
+    "Monkney" => "Monkey",
+    "SMALL SMALL MAMMAL" => "Small Mammal",
+    "CCA" => "Cattle",
+    "SB" => "Unknown",
+    "Common Leopard" => "Common Leopard",
+    ]])
 labels = sort(collect(values(abbreviations)))
 
 function unabbreviate!(df, abbreviations=abbreviations)
-    df.species = [abbreviations[uppercase(x)] for x in df.species]
+    for row in eachrow(df)
+        s = row.species
+        if uppercase(s) ∈ keys(abbreviations)
+            row.species = abbreviations[uppercase(s)]
+        elseif any(==(s), values(abbreviations))
+            continue
+        else#=if tryparse(Int, s) isa Int
+            println("Number $s found in species column")#println(row[[2,3,4,5,8,11,12]])
+        else=#
+            @warn "Unknown species $s"
+        end
+    end
     df
+end
+
+count_typos = Dict(
+    "" => "0",
+    "1o" => "10",
+)
+function process_counts!(df, typos=count_typos)
+    df.count_int = zeros(Int, nrow(df))
+    for row in eachrow(df)
+        s = get(count_typos, row.count, row.count)
+        count = tryparse(Int, s)
+        if count isa Int
+            row.count_int = count
+            continue
+        end
+        if uppercase(s) ∈ keys(abbreviations) && row.species == "" && row.notes == ""
+            row.species = abbreviations[uppercase(s)]
+            row.count_int = 1
+            continue
+        end
+        @warn "WARNING: unknown count $s"
+    end
+end
+
+function find_stray_numbers(df)
+    filter(df) do row
+        tryparse(Int, row.species) isa Int || tryparse(Int, row.notes) isa Int
+    end
 end
 
 function segment_events!(df)
@@ -500,8 +610,7 @@ function segment_events!(df)
     df
 end
 
-function combine_events!(df)
-    df.count_int = [c == "" ? 0 : parse(Int, c) for c in df.count]
+function compute_species_in_events!(df)
     gdf = groupby(df, :event)
     transform!(gdf, :, [:species, :count_int] => countmap => :species_in_event)
     for d in df.species_in_event
@@ -512,9 +621,41 @@ function combine_events!(df)
     df
 end
 
+function json(dict::AbstractDict)
+    pairs = collect(dict)
+    sort!(pairs, by=first)
+    sort!(pairs, by=last, rev=true)
+    "{"*join(("\"$k\": $v" for (k,v) in pairs), ", ")*"}"
+end
+
 function create_binary_ml_labels!(df, labels=labels)
     df.binary_ml_labels = [in(keys(sin)).(labels) for sin in df.species_in_event]
     df
+end
+
+function combine_events_and_drop_cols(df)
+    gdf = groupby(df, :event)
+    combine(gdf,
+        :camera_station => x->only(unique(x)),
+        :time=>minimum,
+        :time=>maximum,
+        :species_in_event=>x->only(unique(x)),
+        :notes => x->join(filter(!isempty, x), ", "))
+end
+
+function process(path)
+    df = load_unique_df(path)
+    unabbreviate!(df)
+    process_counts!(df)
+    stray_numbers = find_stray_numbers(df)
+    if !isempty(stray_numbers)
+        @warn "Stray numbers found in species or notes columns"
+        show(ManualImageCoding.find_stray_numbers(df)[:, [2,3,4,5,8,11,12]], allrows=true, allcols=true)
+    end
+    segment_events!(df)
+    compute_species_in_events!(df)
+
+    df, combine_events_and_drop_cols(df)
 end
 
 end
