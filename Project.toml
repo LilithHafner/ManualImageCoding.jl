@@ -14,6 +14,7 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 TestImages = "5e47fb64-e119-507b-a336-dd2b206d9990"
 
 [compat]
+StatsBase = "0.33"
 julia = "1.6"
 
 [extras]
