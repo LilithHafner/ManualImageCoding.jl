@@ -389,7 +389,7 @@ julia -e 'import Pkg; try Pkg.add(url="https://github.com/LilithHafner/ManualIma
     end
 end
 
-function main(root_path = ".")
+function main(root_path = isempty(ARGS) ? "." : dirname(first(ARGS)))
     println("Started")
     backup(root_path)
     bootstrap(root_path)
